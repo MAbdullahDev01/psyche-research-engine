@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { SignInButton, SignUpButton } from '@clerk/nextjs';
 
 export default function Navbar(){
   return(
@@ -16,8 +17,8 @@ export default function Navbar(){
 
       {/* Auth links */}
       <div className='flex items-center space-x-4'>
-        <Link href="auth/sign-in">Sign In</Link>
-        <Link href="auth/sign-up">Sign Up</Link>
+        <SignInButton />
+        <SignUpButton />
       </div>
     </nav>
   )
