@@ -37,3 +37,7 @@ frontend/next-env.d.ts
 
 # BACKEND
 backend/venv/
+
+.env
+__pycache__/
+*.pyc
