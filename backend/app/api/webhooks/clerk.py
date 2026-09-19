@@ -18,7 +18,17 @@ async def clerk_webhook(request: Request, status_code=status.HTTP_200_OK):
     # Verify the Clerk webhook
     event = verify_clerk_webhook(payload, headers) # type: ignore
 
-    # Add the user to the database
-    add_user(event)
+    match event.get("type"):
+        # Add the user to the database
+        case "user.created":
+            add_user(event)
+        case "user.updated":
+            ...
+        case "user.deleted":
+            ...
+        case _:
+            status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
+            return {status_code : f"Unhandled webhook event type: {event.get('type')}"}
+    
 
     return {status_code : "Webhook received successfully."}
