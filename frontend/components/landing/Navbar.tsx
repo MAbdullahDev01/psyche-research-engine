@@ -1,7 +1,11 @@
+"use client";
+
+import { SignInButton, SignUpButton, useAuth } from '@clerk/nextjs';
 import Link from 'next/link';
-import { SignInButton, SignUpButton } from '@clerk/nextjs';
 
 export default function Navbar(){
+  const { isLoaded, isSignedIn } = useAuth();
+
   return(
     <nav className='flex items-center justify-between p-4 bg-gray-800 text-white'>
 
@@ -12,13 +16,13 @@ export default function Navbar(){
 
       {/* In page links */}
       <div className='flex items-center space-x-4'>
-        <p>To be added</p>
+        {isLoaded && isSignedIn && <Link href="/dashboard" className="text-sm hover:text-cyan-300">Dashboard</Link>}
       </div>
 
       {/* Auth links */}
       <div className='flex items-center space-x-4'>
-        <SignInButton />
-        <SignUpButton />
+        {isLoaded && !isSignedIn && <SignInButton />}
+        {isLoaded && !isSignedIn && <SignUpButton />}
       </div>
     </nav>
   )
