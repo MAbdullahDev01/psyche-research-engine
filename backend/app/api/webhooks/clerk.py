@@ -1,7 +1,9 @@
+from turtle import update
+
 from fastapi import APIRouter, Request, status
 
 from app.core.security import verify_clerk_webhook
-from app.services.user_services import add_user, delete_user
+from app.services.user_services import add_user, delete_user, update_user
 
 router = APIRouter(prefix="/api/webhooks", tags=["webhooks"])
 
@@ -23,7 +25,7 @@ async def clerk_webhook(request: Request, status_code=status.HTTP_200_OK):
         case "user.created":
             add_user(event)
         case "user.updated":
-            ...
+            update_user(event)
         case "user.deleted":
             delete_user(event)
         case _:

@@ -27,3 +27,20 @@ def delete_user(event):
         )
     except Exception as e:
         print(f"Error deleting user: {e}")
+
+def update_user(event):
+    try:
+        response = (
+            supabase.table("users")
+            .update(
+                {
+                    "first_name": event.get("data", {}).get("first_name"),
+                    "last_name": event.get("data", {}).get("last_name"),
+                    "image_url" : event.get("data", {}).get("image_url"),
+                }
+            )
+            .eq("clerk_id", event.get("data", {}).get("id"))
+            .execute()
+        )
+    except Exception as e:
+        print(f"Error updating user: {e}")
