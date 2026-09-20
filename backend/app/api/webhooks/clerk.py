@@ -1,5 +1,3 @@
-from turtle import update
-
 from fastapi import APIRouter, Request, status
 
 from app.core.security import verify_clerk_webhook
