@@ -45,3 +45,20 @@ def list_projects(user_id: str):
     except Exception as e:
             print(f"Error retrieving projects: {e}")
             return {"error": "Failed to retrieve projects."}
+
+def update_a_project(title: str, question : str, project_id : str, user_id : str):
+    try:
+        response = (
+            supabase.table("projects")
+            .update(
+                {
+                "title": title,
+                "question" : question,
+                }
+            )
+            .eq("id", project_id)
+            .eq("user_id", user_id)
+            .execute()
+        )
+    except Exception as e:
+        print(f"Error updating user: {e}")

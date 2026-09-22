@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends
+from rich import print_json
 
-from app.schemas.projects_schemas import ProjectCreateInput
-from app.services.project_services import add_project, get_project_by_id, list_projects
+from app.schemas.projects_schemas import ProjectCreateInput, ProjectUpdateInput
+from app.services.project_services import add_project, get_project_by_id, list_projects, update_a_project
 from app.services.user_services import get_current_user
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
@@ -37,3 +38,16 @@ def get_project(project_id: str, user = Depends(get_current_user)):
     except Exception as e:
         print(f"Error retrieving project: {e}")
         return {"error": "Failed to retrieve project."}
+
+@router.patch("/{project_id}")
+def update_project(input : ProjectUpdateInput, project_id: str, user = Depends(get_current_user)):
+    try:
+        user_id = user.payload["sub"]
+        update_a_project(input.title, input.question, project_id, user_id)
+        updated_project = get_project_by_id(project_id, user_id)
+        if updated_project is None:
+            return {"error": "Project not found."}
+        return updated_project
+    except Exception as e:
+            print(f"Error retrieving project: {e}")
+            return {"error": "Failed to update project."}

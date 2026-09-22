@@ -130,17 +130,6 @@ export async function updateProject(
   projectId: string,
   input: UpdateProjectInput,
 ): Promise<Project> {
-  if (useMockApi) {
-    const state = getMockState();
-    const project = state.projects.find((item) => item.id === projectId);
-    if (!project) throw { message: "Project not found.", status: 404 } satisfies ApiError;
-    const updated = { ...project, ...input, updated_at: new Date().toISOString() };
-    saveMockState({
-      ...state,
-      projects: state.projects.map((item) => (item.id === projectId ? updated : item)),
-    });
-    return updated;
-  }
   return request<Project>(`/api/projects/${projectId}`, token, {
     method: "PATCH",
     body: JSON.stringify(input),
