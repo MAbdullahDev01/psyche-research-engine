@@ -14,4 +14,21 @@ def add_project(title : str, question : str, user_id : str):
             .execute()
         )
     except Exception as e:
-        print(f"Error adding user: {e}")
+        print(f"Error adding project: {e}")
+
+def get_project_by_id(project_id: str, user_id: str):
+    try:
+        response = (
+            supabase.table("projects")
+            .select("*")
+            .eq("id", project_id)
+            .eq("user_id", user_id)
+            .execute()
+        )
+        if response.data:
+            return response.data[0]
+        else:
+            return None
+    except Exception as e:
+        print(f"Error retrieving project: {e}")
+        return None

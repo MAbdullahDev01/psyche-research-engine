@@ -77,16 +77,31 @@ async function request<T>(path: string, token: string | null, init?: RequestInit
   });
 
   if (!response.ok) {
-    let message = "Something went wrong. Please try again.";
-    try {
-      const body = (await response.json()) as { detail?: string; message?: string };
-      message = body.detail ?? body.message ?? message;
-    } catch {
-      // Keep the stable fallback message for non-JSON responses.
+  let message = "Something went wrong. Please try again.";
+
+  try {
+    const body = await response.json();
+
+    if (typeof body.detail === "string") {
+      message = body.detail;
+    } else if (Array.isArray(body.detail)) {
+      message = body.detail
+        .map((error: { msg?: string }) => error.msg ?? "Validation error")
+        .join(", ");
+    } else if (typeof body.message === "string") {
+      message = body.message;
     }
-    const error: ApiError = { message, status: response.status };
-    throw error;
+  } catch {
+    // Keep fallback message
   }
+
+  const error: ApiError = {
+    message,
+    status: response.status,
+  };
+
+  throw error;
+}
 
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
@@ -98,11 +113,6 @@ export async function listProjects(token: string | null): Promise<Project[]> {
 }
 
 export async function getProject(token: string | null, projectId: string): Promise<Project> {
-  if (useMockApi) {
-    const project = getMockState().projects.find((item) => item.id === projectId);
-    if (!project) throw { message: "Project not found.", status: 404 } satisfies ApiError;
-    return project;
-  }
   return request<Project>(`/api/projects/${projectId}`, token);
 }
 
@@ -110,19 +120,6 @@ export async function createProject(
   token: string | null,
   input: CreateProjectInput,
 ): Promise<Project> {
-  if (useMockApi) {
-    const now = new Date().toISOString();
-    const project: Project = {
-      ...input,
-      id: `mock-project-${crypto.randomUUID()}`,
-      status: "draft",
-      created_at: now,
-      updated_at: now,
-    };
-    const state = getMockState();
-    saveMockState({ ...state, projects: [project, ...state.projects] });
-    return project;
-  }
   return request<Project>("/api/projects/", token, {
     method: "POST",
     body: JSON.stringify(input),
