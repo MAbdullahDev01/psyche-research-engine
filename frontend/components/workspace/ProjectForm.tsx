@@ -24,7 +24,7 @@ export default function ProjectForm({ onSubmit, onCancel }: ProjectFormProps) {
     setError("");
     setIsSubmitting(true);
     try {
-      await onSubmit({ title: title.trim(), research_question: question.trim() });
+      await onSubmit({ title: title.trim(), question: question.trim() });
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Could not create project.");
     } finally {

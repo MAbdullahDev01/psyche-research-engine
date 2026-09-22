@@ -3,7 +3,7 @@ export type ProjectStatus = "draft" | "active" | "completed";
 export type Project = {
   id: string;
   title: string;
-  research_question: string;
+  question: string;
   status: ProjectStatus;
   created_at: string;
   updated_at: string;
@@ -26,7 +26,7 @@ export type SavedPaper = Paper & {
 
 export type CreateProjectInput = {
   title: string;
-  research_question: string;
+  question: string;
 };
 
 export type UpdateProjectInput = Partial<CreateProjectInput> & {

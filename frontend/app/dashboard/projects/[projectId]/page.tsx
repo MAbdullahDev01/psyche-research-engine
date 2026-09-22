@@ -103,7 +103,7 @@ export default function ProjectPage() {
             <div className="max-w-3xl">
               <span className="rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-semibold capitalize text-cyan-800">{project.status}</span>
               <h1 className="mt-4 text-4xl font-semibold tracking-tight">{project.title}</h1>
-              <p className="mt-4 text-lg leading-8 text-slate-600">{project.research_question}</p>
+              <p className="mt-4 text-lg leading-8 text-slate-600">{project.question}</p>
             </div>
 
             <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(300px,0.65fr)]">

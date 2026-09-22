@@ -21,7 +21,7 @@ const initialState: MockState = {
     {
       id: "mock-project-1",
       title: "Sleep and academic performance",
-      research_question:
+      question:
         "How does sleep quality affect academic performance in university students?",
       status: "active",
       created_at: "2026-09-01T10:00:00.000Z",
@@ -123,7 +123,7 @@ export async function createProject(
     saveMockState({ ...state, projects: [project, ...state.projects] });
     return project;
   }
-  return request<Project>("/api/projects", token, {
+  return request<Project>("/api/projects/", token, {
     method: "POST",
     body: JSON.stringify(input),
   });
