@@ -1,3 +1,7 @@
+from fastapi import Request, Header, HTTPException
+from clerk_backend_api.security import AuthenticateRequestOptions, authenticate_request
+
+from app.core.clerk import clerk_client
 from app.db.supabase import supabase
 
 def add_user(event):
@@ -44,3 +48,13 @@ def update_user(event):
         )
     except Exception as e:
         print(f"Error updating user: {e}")
+
+def get_current_user(request: Request):
+    auth_state = clerk_client.authenticate_request(request, AuthenticateRequestOptions(
+            authorized_parties=["http://localhost:3000"]
+        ))
+
+    if not auth_state.is_authenticated:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    return auth_state
