@@ -108,7 +108,6 @@ async function request<T>(path: string, token: string | null, init?: RequestInit
 }
 
 export async function listProjects(token: string | null): Promise<Project[]> {
-  if (useMockApi) return getMockState().projects;
   return request<Project[]>("/api/projects", token);
 }
 

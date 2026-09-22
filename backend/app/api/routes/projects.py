@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from app.schemas.projects_schemas import ProjectCreateInput
-from app.services.project_services import add_project, get_project_by_id
+from app.services.project_services import add_project, get_project_by_id, list_projects
 from app.services.user_services import get_current_user
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
@@ -19,6 +19,12 @@ def create_project(input: ProjectCreateInput, user = Depends(get_current_user)):
         return {"error": "Failed to create project."}
     print(f"Creating project with title: {input.title} and question: {input.question}")
     return {"message": "Project created successfully."}
+
+@router.get("/")
+def list_all_projects(user = Depends(get_current_user)):
+    user_id = user.payload["sub"]
+    projects = list_projects(user_id)
+    return projects
 
 @router.get("/{project_id}")
 def get_project(project_id: str, user = Depends(get_current_user)):
