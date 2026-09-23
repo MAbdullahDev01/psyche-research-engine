@@ -62,3 +62,15 @@ def update_a_project(title: str, question : str, project_id : str, user_id : str
         )
     except Exception as e:
         print(f"Error updating user: {e}")
+
+def delete_a_project(project_id : str, user_id : str):
+    try:
+            response = (
+                supabase.table("projects")
+                .delete()
+                .eq("id", project_id)
+                .eq("user_id", user_id)
+                .execute()
+            )
+    except Exception as e:
+        print(f"Error updating user: {e}")

@@ -3,7 +3,7 @@
 import LoadingState from "@/components/workspace/LoadingState";
 import PaperCard from "@/components/workspace/PaperCard";
 import WorkspaceHeader from "@/components/workspace/WorkspaceHeader";
-import { getProject, listSavedPapers, removePaper, savePaper, searchPapers, updateProject } from "@/lib/api";
+import { deleteProject, getProject, listSavedPapers, removePaper, savePaper, searchPapers, updateProject } from "@/lib/api";
 import type { ApiError, Paper, Project, SavedPaper } from "@/lib/types";
 import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
@@ -27,6 +27,7 @@ export default function ProjectPage() {
   const [editTitle, setEditTitle] = useState("");
   const [editQuestion, setEditQuestion] = useState("");
   const [isSavingProject, setIsSavingProject] = useState(false);
+  const [isDeletingProject, setIsDeletingProject] = useState(false);
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
@@ -122,6 +123,21 @@ export default function ProjectPage() {
     }
   }
 
+  async function handleDeleteProject() {
+    if (!project || !window.confirm(`Delete "${project.title}"? This cannot be undone.`)) return;
+
+    setIsDeletingProject(true);
+    setError("");
+    try {
+      const token = await getToken();
+      await deleteProject(token, projectId);
+      router.replace("/dashboard");
+    } catch (deleteError) {
+      setError((deleteError as ApiError).message ?? "Could not delete this project.");
+      setIsDeletingProject(false);
+    }
+  }
+
   if (!isLoaded || !isSignedIn || isLoading) return <LoadingState label="Opening project" />;
 
   return (
@@ -153,7 +169,10 @@ export default function ProjectPage() {
                 <span className="rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-semibold capitalize text-cyan-800">{project.status}</span>
                 <div className="mt-4 flex items-start justify-between gap-4">
                   <h1 className="text-4xl font-semibold tracking-tight">{project.title}</h1>
-                  <button type="button" onClick={() => setIsEditing(true)} className="shrink-0 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-cyan-600 hover:text-cyan-800">Edit project</button>
+                  <div className="flex shrink-0 gap-2">
+                    <button type="button" onClick={() => setIsEditing(true)} disabled={isDeletingProject} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-cyan-600 hover:text-cyan-800 disabled:cursor-not-allowed disabled:opacity-50">Edit project</button>
+                    <button type="button" onClick={() => void handleDeleteProject()} disabled={isDeletingProject} className="rounded-lg border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-700 hover:border-rose-400 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50">{isDeletingProject ? "Deleting..." : "Delete project"}</button>
+                  </div>
                 </div>
                 <p className="mt-4 text-lg leading-8 text-slate-600">{project.question}</p>
               </div>

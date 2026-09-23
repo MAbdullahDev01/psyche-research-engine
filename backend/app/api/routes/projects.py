@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from rich import print_json
 
 from app.schemas.projects_schemas import ProjectCreateInput, ProjectUpdateInput
-from app.services.project_services import add_project, get_project_by_id, list_projects, update_a_project
+from app.services.project_services import add_project, get_project_by_id, list_projects, update_a_project, delete_a_project
 from app.services.user_services import get_current_user
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
@@ -51,3 +51,15 @@ def update_project(input : ProjectUpdateInput, project_id: str, user = Depends(g
     except Exception as e:
             print(f"Error retrieving project: {e}")
             return {"error": "Failed to update project."}
+
+@router.delete("/{project_id}")
+def delete_project(project_id: str, user = Depends(get_current_user)):
+    try:
+            user_id = user.payload["sub"]
+            project = get_project_by_id(project_id, user_id)
+            if project is None:
+                return {"error": "Project not found."}
+            delete_a_project(project_id, user_id)
+    except Exception as e:
+        print(f"Error retrieving project: {e}")
+        return {"error": "Failed to delete project."}

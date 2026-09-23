@@ -137,16 +137,6 @@ export async function updateProject(
 }
 
 export async function deleteProject(token: string | null, projectId: string): Promise<void> {
-  if (useMockApi) {
-    const state = getMockState();
-    saveMockState({
-      projects: state.projects.filter((item) => item.id !== projectId),
-      papers: Object.fromEntries(
-        Object.entries(state.papers).filter(([key]) => key !== projectId),
-      ),
-    });
-    return;
-  }
   return request<void>(`/api/projects/${projectId}`, token, { method: "DELETE" });
 }
 
