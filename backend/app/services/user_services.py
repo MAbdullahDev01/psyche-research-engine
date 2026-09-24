@@ -1,5 +1,5 @@
 from fastapi import Request, Header, HTTPException
-from clerk_backend_api.security import AuthenticateRequestOptions, authenticate_request
+from clerk_backend_api.security import AuthenticateRequestOptions, RequestState
 
 from app.core.clerk import clerk_client
 from app.db.supabase import supabase
@@ -21,6 +21,11 @@ def add_user(event):
     except Exception as e:
         print(f"Error adding user: {e}")
 
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to add user"
+        )
+
 def delete_user(event):
     try:
         response = (
@@ -31,6 +36,12 @@ def delete_user(event):
         )
     except Exception as e:
         print(f"Error deleting user: {e}")
+        # Error logging for debugging purposes
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to delete user"
+        )
+        
 
 def update_user(event):
     try:
@@ -47,9 +58,15 @@ def update_user(event):
             .execute()
         )
     except Exception as e:
+        # Error logging for debugging purposes
         print(f"Error updating user: {e}")
 
-def get_current_user(request: Request):
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to update user"
+        )
+
+def get_current_user(request: Request) -> RequestState:
     auth_state = clerk_client.authenticate_request(request, AuthenticateRequestOptions(
             authorized_parties=["http://localhost:3000"]
         ))
