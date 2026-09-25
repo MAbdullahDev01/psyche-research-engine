@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     PUBLIC_CLERK_PUBLISHABLE_KEY: str
     CLERK_SECRET_KEY: str
     CLERK_WEBHOOK_SIGNING_SECRET: str
+    OPENALEX_API_KEY : str
 
     # Config for settings
     model_config = SettingsConfigDict(env_file=".env")
