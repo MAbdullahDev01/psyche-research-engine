@@ -1,3 +1,5 @@
+from fastapi import HTTPException
+
 from app.db.supabase import supabase
 
 def add_project(title : str, question : str, user_id : str):
@@ -14,7 +16,13 @@ def add_project(title : str, question : str, user_id : str):
             .execute()
         )
     except Exception as e:
-        print(f"Error adding project: {e}")
+        # Error logging for debugging purposes
+        print(f"Database error: {e}")
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to create project"
+        )
 
 def get_project_by_id(project_id: str, user_id: str):
     try:
@@ -30,8 +38,13 @@ def get_project_by_id(project_id: str, user_id: str):
         else:
             return None
     except Exception as e:
-        print(f"Error retrieving project: {e}")
-        return None
+        # Error logging for debugging purposes
+        print(f"Database error: {e}")
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to get project"
+        )
 
 def list_projects(user_id: str):
     try:
@@ -43,8 +56,13 @@ def list_projects(user_id: str):
         )
         return response.data
     except Exception as e:
-            print(f"Error retrieving projects: {e}")
-            return {"error": "Failed to retrieve projects."}
+        # Error logging for debugging purposes
+        print(f"Database error: {e}")
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to list projects"
+        )
 
 def update_a_project(title: str, question : str, project_id : str, user_id : str):
     try:
@@ -61,7 +79,13 @@ def update_a_project(title: str, question : str, project_id : str, user_id : str
             .execute()
         )
     except Exception as e:
-        print(f"Error updating user: {e}")
+        # Error logging for debugging purposes
+        print(f"Database error: {e}")
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to update project"
+        )
 
 def delete_a_project(project_id : str, user_id : str):
     try:
@@ -73,4 +97,10 @@ def delete_a_project(project_id : str, user_id : str):
                 .execute()
             )
     except Exception as e:
-        print(f"Error updating user: {e}")
+        # Error logging for debugging purposes
+        print(f"Database error: {e}")
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to delete project"
+        )
