@@ -2,6 +2,7 @@ import type {
   ApiError,
   CreateProjectInput,
   Paper,
+  PaperType,
   Project,
   SavedPaper,
   UpdateProjectInput,
@@ -140,15 +141,35 @@ export async function deleteProject(token: string | null, projectId: string): Pr
   return request<void>(`/api/projects/${projectId}`, token, { method: "DELETE" });
 }
 
-export async function searchPapers(token: string | null, query: string): Promise<Paper[]> {
-  if (useMockApi) {
-    return [1, 2, 3].map((index) => mockPaper(index, query));
-  }
-  const params = new URLSearchParams({ q: query, page: "1", per_page: "10" });
+export async function searchPapers(
+  token: string | null,
+  query: string,
+  fromPublicationDate: string,
+  type: PaperType,
+): Promise<Paper[]> {
+
+  const body = {
+    query,
+    page: 1,
+    per_page: 10,
+    filters: {
+      type,
+      from_publication_date: fromPublicationDate,
+    },
+  };
+
   const result = await request<Paper[] | { results: Paper[] }>(
-    `/api/search/papers?${params.toString()}`,
+    `/api/papers/search/papers`,
     token,
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
   );
+
   return Array.isArray(result) ? result : result.results;
 }
 

@@ -14,7 +14,9 @@ export default function PaperCard({ paper, actionLabel, onAction, disabled }: Pa
         <div className="min-w-0">
           <h3 className="font-semibold leading-6 text-slate-950">{paper.title}</h3>
           <p className="mt-1 text-sm text-slate-500">
-            {paper.authors.join(", ") || "Unknown authors"}
+            {paper.authorships
+              ?.map((a) => a.author.display_name)
+              .join(", ") || "Unknown authors"}
             {paper.publication_year ? ` · ${paper.publication_year}` : ""}
           </p>
         </div>

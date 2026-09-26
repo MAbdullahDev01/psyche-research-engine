@@ -4,7 +4,7 @@ import LoadingState from "@/components/workspace/LoadingState";
 import PaperCard from "@/components/workspace/PaperCard";
 import WorkspaceHeader from "@/components/workspace/WorkspaceHeader";
 import { deleteProject, getProject, listSavedPapers, removePaper, savePaper, searchPapers, updateProject } from "@/lib/api";
-import type { ApiError, Paper, Project, SavedPaper } from "@/lib/types";
+import type { ApiError, Paper, PaperType, Project, SavedPaper } from "@/lib/types";
 import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -19,6 +19,8 @@ export default function ProjectPage() {
   const [savedPapers, setSavedPapers] = useState<SavedPaper[]>([]);
   const [results, setResults] = useState<Paper[]>([]);
   const [query, setQuery] = useState("");
+    const [fromPublicationDate, setFromPublicationDate] = useState("2025-01-01");
+    const [paperType, setPaperType] = useState<PaperType>("article");
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const [busyPaperId, setBusyPaperId] = useState("");
@@ -63,7 +65,7 @@ export default function ProjectPage() {
     setError("");
     try {
       const token = await getToken();
-      setResults(await searchPapers(token, query.trim()));
+      setResults(await searchPapers(token, query.trim(), fromPublicationDate, paperType));
     } catch (searchError) {
       setError((searchError as ApiError).message ?? "Search failed.");
     } finally {
@@ -182,9 +184,23 @@ export default function ProjectPage() {
               <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700">Research</p>
                 <h2 className="mt-2 text-xl font-semibold">Find academic papers</h2>
-                <form onSubmit={handleSearch} className="mt-5 flex gap-3">
-                  <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by topic or question" className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100" />
-                  <button type="submit" disabled={isSearching || !query.trim()} className="rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-cyan-800 disabled:cursor-not-allowed disabled:opacity-50">{isSearching ? "Searching..." : "Search"}</button>
+                <form onSubmit={handleSearch} className="mt-5 space-y-3">
+                  <div className="flex gap-3">
+                    <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by topic or question" className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100" />
+                    <button type="submit" disabled={isSearching || !query.trim()} className="rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-cyan-800 disabled:cursor-not-allowed disabled:opacity-50">{isSearching ? "Searching..." : "Search"}</button>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="text-sm font-medium text-slate-700">
+                      Published after
+                      <input type="date" value={fromPublicationDate} onChange={(event) => setFromPublicationDate(event.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 font-normal outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100" />
+                    </label>
+                    <label className="text-sm font-medium text-slate-700">
+                      Paper type
+                      <select value={paperType} onChange={(event) => setPaperType(event.target.value as PaperType)} className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100">
+                        {(["article", "book", "book-chapter", "dataset", "dissertation", "editorial", "letter", "paratext", "preprint", "review", "reference-entry", "report", "standard"] as PaperType[]).map((type) => <option key={type} value={type}>{type}</option>)}
+                      </select>
+                    </label>
+                  </div>
                 </form>
                 <div className="mt-5">
                   {results.length === 0 ? <p className="py-8 text-sm text-slate-500">Search results will appear here.</p> : results.map((paper) => <PaperCard key={paper.id} paper={paper} actionLabel={savedPapers.some((item) => item.openalex_id === paper.openalex_id) ? "Saved" : "Save"} onAction={() => void handleSave(paper)} disabled={busyPaperId === paper.id || savedPapers.some((item) => item.openalex_id === paper.openalex_id)} />)}

@@ -1,5 +1,20 @@
 export type ProjectStatus = "draft" | "active" | "completed";
 
+export type PaperType =
+  | "article"
+  | "book"
+  | "book-chapter"
+  | "dataset"
+  | "dissertation"
+  | "editorial"
+  | "letter"
+  | "paratext"
+  | "preprint"
+  | "review"
+  | "reference-entry"
+  | "report"
+  | "standard";
+
 export type Project = {
   id: string;
   title: string;
