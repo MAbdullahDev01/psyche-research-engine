@@ -55,7 +55,6 @@ function saveMockState(state: MockState) {
 
 function mockPaper(index: number, query: string): Paper {
   return {
-    id: `mock-paper-${index}`,
     openalex_id: `https://openalex.org/mock-${index}`,
     title: `${query}: a systematic review of current evidence`,
     authors: ["Research Archive", `Author ${index}`],
@@ -64,6 +63,13 @@ function mockPaper(index: number, query: string): Paper {
       "This sample result is available in mock mode so the research workflow can be exercised before the API is connected.",
     landing_page_url: "https://openalex.org/",
     doi: null,
+  };
+}
+
+function mockSavedPaper(projectId: string, paper: Paper): SavedPaper {
+  return {
+    ...paper,
+    id: `mock-${projectId}-${paper.openalex_id}`,
   };
 }
 
@@ -147,18 +153,12 @@ export async function searchPapers(
   fromPublicationDate: string,
   type: PaperType,
 ): Promise<Paper[]> {
-
-  const body = {
+  let body = {
     query,
-    page: 1,
-    per_page: 10,
-    filters: {
-      type,
-      from_publication_date: fromPublicationDate,
-    },
+    from_publication_date: fromPublicationDate,
+    type,
   };
-
-  const result = await request<Paper[] | { results: Paper[] }>(
+  const result = await request<{ papers: Paper[] }>(
     `/api/papers/search/papers`,
     token,
     {
@@ -170,7 +170,7 @@ export async function searchPapers(
     }
   );
 
-  return Array.isArray(result) ? result : result.results;
+  return result.papers;
 }
 
 export async function listSavedPapers(
@@ -186,19 +186,6 @@ export async function savePaper(
   projectId: string,
   paper: Paper,
 ): Promise<SavedPaper> {
-  if (useMockApi) {
-    const state = getMockState();
-    const existing = state.papers[projectId]?.find(
-      (item) => item.openalex_id === paper.openalex_id,
-    );
-    if (existing) return existing;
-    const saved = { ...paper, saved_at: new Date().toISOString() };
-    saveMockState({
-      ...state,
-      papers: { ...state.papers, [projectId]: [...(state.papers[projectId] ?? []), saved] },
-    });
-    return saved;
-  }
   return request<SavedPaper>(`/api/projects/${projectId}/papers`, token, {
     method: "POST",
     body: JSON.stringify(paper),
@@ -212,15 +199,13 @@ export async function removePaper(
 ): Promise<void> {
   if (useMockApi) {
     const state = getMockState();
-    saveMockState({
-      ...state,
-      papers: {
-        ...state.papers,
-        [projectId]: (state.papers[projectId] ?? []).filter((item) => item.id !== paperId),
-      },
-    });
+    state.papers[projectId] = (state.papers[projectId] ?? []).filter(
+      (item) => item.id !== paperId,
+    );
+    saveMockState(state);
     return;
   }
+
   return request<void>(`/api/projects/${projectId}/papers/${paperId}`, token, {
     method: "DELETE",
   });

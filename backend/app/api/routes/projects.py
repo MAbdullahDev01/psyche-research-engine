@@ -1,8 +1,18 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from app.schemas.projects_schemas import ProjectCreateInput, ProjectUpdateInput
-from app.services.project_services import add_project,delete_a_project, get_project_by_id, list_projects, update_a_project 
+from app.services.project_services import (
+    add_project,
+    delete_a_project,
+    get_project_by_id,
+    list_projects,
+    update_a_project,
+    add_paper_to_project_service,
+    list_papers_for_project,
+    remove_paper_from_project,
+)
 from app.services.user_services import get_current_user
+from app.schemas.papers_schemas import PaperCreate, SavedPaper
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
@@ -62,3 +72,61 @@ def delete_project(project_id: str, user = Depends(get_current_user)) -> dict[st
     except Exception as e:
         print(f"Error retrieving project: {e}")
         return {"error": "Failed to delete project."}
+
+@router.post("/{project_id}/papers")
+def add_paper_to_project(
+    project_id : str,
+    paper : PaperCreate,
+    user = Depends(get_current_user)
+) -> SavedPaper:
+
+    try:
+        user_id = user.payload["sub"]
+
+        project = get_project_by_id(project_id, user_id)
+
+        if project is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Project not found"
+            )
+
+        return add_paper_to_project_service(
+            project_id,
+            paper,
+            user_id
+        )
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        print(f"Error adding paper to project: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to add paper to project."
+        )
+
+
+@router.get("/{project_id}/papers", response_model=list[SavedPaper])
+def list_project_papers(
+    project_id: str,
+    user=Depends(get_current_user),
+) -> list[SavedPaper]:
+    user_id = user.payload["sub"]
+    if get_project_by_id(project_id, user_id) is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return list_papers_for_project(project_id)
+
+
+@router.delete("/{project_id}/papers/{paper_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_project_paper(
+    project_id: str,
+    paper_id: str,
+    user=Depends(get_current_user),
+) -> Response:
+    user_id = user.payload["sub"]
+    if get_project_by_id(project_id, user_id) is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    remove_paper_from_project(project_id, paper_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

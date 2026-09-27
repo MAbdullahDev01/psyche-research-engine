@@ -25,7 +25,6 @@ export type Project = {
 };
 
 export type Paper = {
-  id: string;
   openalex_id: string;
   title: string;
   authors: string[];
@@ -36,7 +35,7 @@ export type Paper = {
 };
 
 export type SavedPaper = Paper & {
-  saved_at: string;
+  id: string;
 };
 
 export type CreateProjectInput = {

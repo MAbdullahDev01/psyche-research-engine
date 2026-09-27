@@ -74,11 +74,11 @@ export default function ProjectPage() {
   }
 
   async function handleSave(paper: Paper) {
-    setBusyPaperId(paper.id);
+    setBusyPaperId(paper.openalex_id);
     try {
       const token = await getToken();
       const saved = await savePaper(token, projectId, paper);
-      setSavedPapers((current) => current.some((item) => item.id === saved.id) ? current : [...current, saved]);
+      setSavedPapers((current) => current.some((item) => item.openalex_id === saved.openalex_id) ? current : [...current, saved]);
     } catch (saveError) {
       setError((saveError as ApiError).message ?? "Could not save paper.");
     } finally {
@@ -203,7 +203,32 @@ export default function ProjectPage() {
                   </div>
                 </form>
                 <div className="mt-5">
-                  {results.length === 0 ? <p className="py-8 text-sm text-slate-500">Search results will appear here.</p> : results.map((paper) => <PaperCard key={paper.id} paper={paper} actionLabel={savedPapers.some((item) => item.openalex_id === paper.openalex_id) ? "Saved" : "Save"} onAction={() => void handleSave(paper)} disabled={busyPaperId === paper.id || savedPapers.some((item) => item.openalex_id === paper.openalex_id)} />)}
+                  {results.length === 0 ? (
+                    <p className="py-8 text-sm text-slate-500">
+                      Search results will appear here.
+                    </p>
+                  ) : (
+                    results.map((paper) => (
+                      <PaperCard
+                        key={paper.openalex_id}
+                        paper={paper}
+                        actionLabel={
+                          savedPapers.some(
+                            (item) => item.openalex_id === paper.openalex_id
+                          )
+                            ? "Saved"
+                            : "Save"
+                        }
+                        onAction={() => void handleSave(paper)}
+                        disabled={
+                          busyPaperId === paper.openalex_id ||
+                          savedPapers.some(
+                            (item) => item.openalex_id === paper.openalex_id
+                          )
+                        }
+                      />
+                    ))
+                  )}
                 </div>
               </section>
 
