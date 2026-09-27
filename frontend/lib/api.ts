@@ -53,27 +53,11 @@ function saveMockState(state: MockState) {
   window.localStorage.setItem(storageKey, JSON.stringify(state));
 }
 
-function mockPaper(index: number, query: string): Paper {
-  return {
-    openalex_id: `https://openalex.org/mock-${index}`,
-    title: `${query}: a systematic review of current evidence`,
-    authors: ["Research Archive", `Author ${index}`],
-    publication_year: 2024 - (index % 3),
-    abstract:
-      "This sample result is available in mock mode so the research workflow can be exercised before the API is connected.",
-    landing_page_url: "https://openalex.org/",
-    doi: null,
-  };
-}
-
-function mockSavedPaper(projectId: string, paper: Paper): SavedPaper {
-  return {
-    ...paper,
-    id: `mock-${projectId}-${paper.openalex_id}`,
-  };
-}
-
-async function request<T>(path: string, token: string | null, init?: RequestInit): Promise<T> {
+async function request<T>(
+  path: string,
+  token: string | null,
+  init?: RequestInit,
+): Promise<T> {
   const response = await fetch(`${apiUrl}${path}`, {
     ...init,
     headers: {
@@ -84,31 +68,31 @@ async function request<T>(path: string, token: string | null, init?: RequestInit
   });
 
   if (!response.ok) {
-  let message = "Something went wrong. Please try again.";
+    let message = "Something went wrong. Please try again.";
 
-  try {
-    const body = await response.json();
+    try {
+      const body = await response.json();
 
-    if (typeof body.detail === "string") {
-      message = body.detail;
-    } else if (Array.isArray(body.detail)) {
-      message = body.detail
-        .map((error: { msg?: string }) => error.msg ?? "Validation error")
-        .join(", ");
-    } else if (typeof body.message === "string") {
-      message = body.message;
+      if (typeof body.detail === "string") {
+        message = body.detail;
+      } else if (Array.isArray(body.detail)) {
+        message = body.detail
+          .map((error: { msg?: string }) => error.msg ?? "Validation error")
+          .join(", ");
+      } else if (typeof body.message === "string") {
+        message = body.message;
+      }
+    } catch {
+      // Keep fallback message.
     }
-  } catch {
-    // Keep fallback message
+
+    const error: ApiError = {
+      message,
+      status: response.status,
+    };
+
+    throw error;
   }
-
-  const error: ApiError = {
-    message,
-    status: response.status,
-  };
-
-  throw error;
-}
 
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
@@ -118,7 +102,10 @@ export async function listProjects(token: string | null): Promise<Project[]> {
   return request<Project[]>("/api/projects", token);
 }
 
-export async function getProject(token: string | null, projectId: string): Promise<Project> {
+export async function getProject(
+  token: string | null,
+  projectId: string,
+): Promise<Project> {
   return request<Project>(`/api/projects/${projectId}`, token);
 }
 
@@ -143,8 +130,13 @@ export async function updateProject(
   });
 }
 
-export async function deleteProject(token: string | null, projectId: string): Promise<void> {
-  return request<void>(`/api/projects/${projectId}`, token, { method: "DELETE" });
+export async function deleteProject(
+  token: string | null,
+  projectId: string,
+): Promise<void> {
+  return request<void>(`/api/projects/${projectId}`, token, {
+    method: "DELETE",
+  });
 }
 
 export async function searchPapers(
@@ -153,21 +145,23 @@ export async function searchPapers(
   fromPublicationDate: string,
   type: PaperType,
 ): Promise<Paper[]> {
-  let body = {
-    query,
-    from_publication_date: fromPublicationDate,
-    type,
+  const body = {
+    query: query.trim(),
+    page: 1,
+    per_page: 20,
+    filters: {
+      type,
+      from_publication_date: fromPublicationDate,
+    },
   };
+
   const result = await request<{ papers: Paper[] }>(
-    `/api/papers/search/papers`,
+    "/api/papers/search/papers",
     token,
     {
       method: "POST",
       body: JSON.stringify(body),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }
+    },
   );
 
   return result.papers;
@@ -186,6 +180,20 @@ export async function savePaper(
   projectId: string,
   paper: Paper,
 ): Promise<SavedPaper> {
+  if (useMockApi) {
+    const state = getMockState();
+    const existing = (state.papers[projectId] ?? []).find(
+      (item) => item.openalex_id === paper.openalex_id,
+    );
+
+    if (existing) return existing;
+
+    const saved = mockSavedPaper(projectId, paper);
+    state.papers[projectId] = [...(state.papers[projectId] ?? []), saved];
+    saveMockState(state);
+    return saved;
+  }
+
   return request<SavedPaper>(`/api/projects/${projectId}/papers`, token, {
     method: "POST",
     body: JSON.stringify(paper),
@@ -206,7 +214,18 @@ export async function removePaper(
     return;
   }
 
-  return request<void>(`/api/projects/${projectId}/papers/${paperId}`, token, {
-    method: "DELETE",
-  });
+  return request<void>(
+    `/api/projects/${projectId}/papers/${paperId}`,
+    token,
+    {
+      method: "DELETE",
+    },
+  );
+}
+
+function mockSavedPaper(projectId: string, paper: Paper): SavedPaper {
+  return {
+    ...paper,
+    id: `mock-${projectId}-${paper.openalex_id}`,
+  };
 }
