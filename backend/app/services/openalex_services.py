@@ -4,6 +4,7 @@ import httpx
 from fastapi import HTTPException, status
 
 from app.schemas.papers_schemas import Paper, Params, SearchPapersResponse
+from app.core.config import settings
 
 STOP_WORDS = {
     "what",
@@ -37,17 +38,21 @@ def fetch_papers(params: Params) -> SearchPapersResponse:
             detail="Search query must contain at least one searchable term.",
         )
 
+    filter_values = params.filters.model_dump(exclude_none=True)
     filters = ",".join(
         f"{key}:{value}"
-        for key, value in params.filters.model_dump().items()
+        for key, value in filter_values.items()
+        if isinstance(value, str) and value.strip()
     )
 
     openalex_params = {
         "search": query,
         "page": params.page,
         "per-page": params.per_page,
-        "filter": filters,
+        "api_key": settings.OPENALEX_API_KEY,
     }
+    if filters:
+        openalex_params["filter"] = filters
 
     try:
         with httpx.Client(timeout=10.0) as client:
@@ -57,9 +62,10 @@ def fetch_papers(params: Params) -> SearchPapersResponse:
             )
             response.raise_for_status()
     except httpx.HTTPStatusError as exc:
+        upstream_status = exc.response.status_code
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="OpenAlex rejected the paper search request.",
+            detail=f"OpenAlex rejected the paper search request (HTTP {upstream_status}).",
         ) from exc
     except httpx.RequestError as exc:
         raise HTTPException(
