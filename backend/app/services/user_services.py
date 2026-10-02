@@ -8,13 +8,14 @@ def add_user(event):
     try:
         response = (
             supabase.table("users")
-            .insert(
+            .upsert(
                 {
                     "clerk_id": event.get("data", {}).get("id"),
                     "first_name": event.get("data", {}).get("first_name"),
                     "last_name": event.get("data", {}).get("last_name"),
                     "image_url" : event.get("data", {}).get("image_url"),
-                }
+                },
+                on_conflict="clerk_id",
             )
             .execute()
         )
