@@ -2,8 +2,9 @@ from fastapi import HTTPException
 
 from app.db.supabase import supabase
 from app.schemas.papers_schemas import PaperCreate, SavedPaper
+from app.schemas.projects_schemas import Project
 
-def add_project(title : str, question : str, user_id : str):
+def add_project(title : str, question : str, user_id : str) -> Project:
     try:
         response = (
             supabase.table("projects")
@@ -16,6 +17,7 @@ def add_project(title : str, question : str, user_id : str):
             )
             .execute()
         )
+        print(response)
     except Exception as e:
         # Error logging for debugging purposes
         print(f"Database error: {e}")
@@ -24,8 +26,9 @@ def add_project(title : str, question : str, user_id : str):
             status_code=500,
             detail="Failed to create project"
         )
+    return Project(**response.data[0])
 
-def get_project_by_id(project_id: str, user_id: str):
+def get_project_by_id(project_id: str, user_id: str) -> Project | None:
     try:
         response = (
             supabase.table("projects")
@@ -35,7 +38,7 @@ def get_project_by_id(project_id: str, user_id: str):
             .execute()
         )
         if response.data:
-            return response.data[0]
+            return Project(**response.data[0])
         else:
             return None
     except Exception as e:
@@ -47,7 +50,7 @@ def get_project_by_id(project_id: str, user_id: str):
             detail="Failed to get project"
         )
 
-def list_projects(user_id: str):
+def list_projects(user_id: str) -> list[Project]:
     try:
         response = (
             supabase.table("projects")
@@ -55,7 +58,7 @@ def list_projects(user_id: str):
             .eq("user_id", user_id)
             .execute()
         )
-        return response.data
+        return [Project(**item) for item in response.data]
     except Exception as e:
         # Error logging for debugging purposes
         print(f"Database error: {e}")
@@ -65,7 +68,7 @@ def list_projects(user_id: str):
             detail="Failed to list projects"
         )
 
-def update_a_project(title: str, question : str, project_id : str, user_id : str):
+def update_a_project(title: str, question : str, project_id : str, user_id : str) -> Project:
     try:
         response = (
             supabase.table("projects")
@@ -87,6 +90,8 @@ def update_a_project(title: str, question : str, project_id : str, user_id : str
             status_code=500,
             detail="Failed to update project"
         )
+
+    return Project(**response.data[0])
 
 def delete_a_project(project_id : str, user_id : str):
     try:

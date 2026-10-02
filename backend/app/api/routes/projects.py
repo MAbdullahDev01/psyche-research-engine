@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
-from app.schemas.projects_schemas import ProjectCreateInput, ProjectUpdateInput
+# Local imports
+from app.schemas.papers_schemas import PaperCreate, SavedPaper
+from app.schemas.projects_schemas import ProjectCreateInput, ProjectUpdateInput, Project
 from app.services.project_services import (
     add_project,
     delete_a_project,
@@ -12,53 +14,56 @@ from app.services.project_services import (
     remove_paper_from_project,
 )
 from app.services.user_services import get_current_user
-from app.schemas.papers_schemas import PaperCreate, SavedPaper
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
 @router.post("/")
-def create_project(input: ProjectCreateInput, user = Depends(get_current_user)):
+def create_project(input: ProjectCreateInput, user = Depends(get_current_user)) -> Project | dict[str, str]:
     try:
         user_id = user.payload["sub"]
         title = input.title
         question = input.question
-        add_project(title, question, user_id)
+        project = add_project(title, question, user_id)
 
     except Exception as e:
         print(f"Error creating project: {e}")
         return {"error": "Failed to create project."}
-    return {"message": "Project created successfully."}
+    return project
 
 @router.get("/")
-def list_all_projects(user = Depends(get_current_user)) -> list:
+def list_all_projects(user = Depends(get_current_user)) -> list[Project] | dict[str, str]:
     user_id = user.payload["sub"]
-    projects = list_projects(user_id)
+    try:
+        projects = list_projects(user_id)
+    except Exception as e:
+        print(f"Error listing projects: {e}")
+        return {"error": "Failed to list projects."}
     return projects
 
 @router.get("/{project_id}")
-def get_project(project_id: str, user = Depends(get_current_user)):
+def get_project(project_id: str, user = Depends(get_current_user)) -> Project | dict[str, str]:
     try:
         user_id = user.payload["sub"]
         project = get_project_by_id(project_id, user_id)
         if project is None:
             return {"error": "Project not found."}
-        return project
     except Exception as e:
         print(f"Error retrieving project: {e}")
         return {"error": "Failed to retrieve project."}
+    return project
 
 @router.patch("/{project_id}")
-def update_project(input : ProjectUpdateInput, project_id: str, user = Depends(get_current_user)):
+def update_project(input : ProjectUpdateInput, project_id: str, user = Depends(get_current_user)) -> Project | dict[str, str]:
     try:
         user_id = user.payload["sub"]
         update_a_project(input.title, input.question, project_id, user_id)
         updated_project = get_project_by_id(project_id, user_id)
         if updated_project is None:
             return {"error": "Project not found."}
-        return updated_project
     except Exception as e:
             print(f"Error retrieving project: {e}")
             return {"error": "Failed to update project."}
+    return updated_project
 
 @router.delete("/{project_id}")
 def delete_project(project_id: str, user = Depends(get_current_user)) -> dict[str, str]:
