@@ -1,16 +1,1 @@
-import Navbar from "@/components/landing/Navbar"
-import Link from "next/link"
-
-export default function HomePage() {
-  return(
-    <div className="min-h-screen bg-slate-950 text-white">
-      <Navbar />
-      <main className="mx-auto max-w-5xl px-6 py-28">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">Research, with a trail</p>
-        <h1 className="mt-5 max-w-3xl text-5xl font-semibold tracking-tight sm:text-7xl">Turn a question into a body of evidence.</h1>
-        <p className="mt-7 max-w-xl text-lg leading-8 text-slate-300">Create a private research project, discover academic papers, and keep the sources that move your thinking forward.</p>
-        <Link href="/dashboard" className="mt-9 inline-block rounded-lg bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-300">Open workspace</Link>
-      </main>
-    </div>
-  )
-}
+import Navbar from "@/components/landing/Navbar";import Hero from "@/components/landing/Hero";import Problem from "@/components/landing/Problem";import ResearchProcess from "@/components/landing/ResearchProcess";import ProductDemo from "@/components/landing/ProductDemo";import HowItWorks from "@/components/landing/HowItWorks";import ResearchGraph from "@/components/landing/ResearchGraph";import FinalCTA from "@/components/landing/FinalCTA";import Footer from "@/components/landing/Footer";import SectionLabel from "@/components/ui/SectionLabel";export default function HomePage(){return <div className="paper-noise min-h-screen bg-[#F5F3EE] text-[#171816]"><Navbar/><main><Hero/><Problem/><ResearchProcess/><ProductDemo/><section id="understand" className="mx-auto max-w-[1440px] px-5 pb-28 md:px-8 lg:px-16"><div className="mb-7"><SectionLabel>Research graph</SectionLabel><h2 className="font-editorial mt-4 text-5xl md:text-7xl">Evidence is connected.</h2></div><ResearchGraph/></section><section id="write" className="border-y border-[#DCDAD2] bg-[#ECE9E1]"><div className="mx-auto max-w-[1440px] px-5 py-24 md:px-8 lg:px-16"><SectionLabel>Write / future workspace</SectionLabel><div className="mt-8 grid gap-10 md:grid-cols-12"><h2 className="font-editorial text-5xl leading-none md:col-span-7 md:text-7xl">Saved research will eventually become the foundation of your paper.</h2><div className="md:col-span-5 md:pt-3"><div className="border border-[#C9C7BF] bg-[#FAF9F6] p-6"><div className="font-mono-ui text-[9px] tracking-[.14em] text-[#6E7068]">WRITING WORKSPACE</div><div className="mt-8 space-y-3"><div className="h-2 w-4/5 bg-[#DCDAD2]"/><div className="h-2 w-full bg-[#E4E2DB]"/><div className="h-2 w-3/4 bg-[#E4E2DB]"/><div className="mt-8 h-20 border-l-2 border-[#315C4A] bg-[#EEF4F0]"/></div></div></div></div></div></section><HowItWorks/><FinalCTA/></main><Footer/></div>}
