@@ -1,0 +1,1 @@
+export default function SectionLabel({children}:{children:string}){return <p className="font-mono-ui text-[10px] uppercase tracking-[.14em] text-[#6E7068]">{children}</p>}
