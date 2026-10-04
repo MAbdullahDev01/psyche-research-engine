@@ -1,17 +1,1 @@
-"use client";
-
-import { UserButton } from "@clerk/nextjs";
-import Link from "next/link";
-
-export default function WorkspaceHeader() {
-  return (
-    <header className="border-b border-slate-200 bg-white">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/dashboard" className="font-semibold tracking-tight text-slate-950">
-          Psyche Research Engine
-        </Link>
-        <UserButton />
-      </div>
-    </header>
-  );
-}
+"use client";import{UserButton}from"@clerk/nextjs";import Link from"next/link";export default function WorkspaceHeader(){return <header className="sticky top-0 z-50 border-b border-[#DCDAD2] bg-[#FAF9F6]/95 backdrop-blur"><div className="flex h-[68px] items-center justify-between px-5 md:px-8"><Link href="/dashboard" className="flex items-center gap-3"><span className="h-2 w-2 rounded-full bg-[#315C4A]"/><span><span className="block text-[10px] font-bold tracking-[.12em]">PSYCHOLOGY</span><span className="block text-[10px] tracking-[.08em] text-[#6E7068]">RESEARCH LAB</span></span></Link><div className="flex items-center gap-5"><span className="hidden font-mono-ui text-[9px] uppercase tracking-[.12em] text-[#6E7068] sm:inline">Research workstation</span><UserButton/></div></div></header>}
