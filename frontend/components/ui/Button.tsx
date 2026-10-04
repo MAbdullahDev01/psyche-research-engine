@@ -1,0 +1,4 @@
+"use client";
+import Link from "next/link";import type {ReactNode} from "react";
+type Props={children:ReactNode;href?:string;onClick?:()=>void;type?:"button"|"submit";disabled?:boolean;secondary?:boolean;className?:string};
+export default function Button({children,href,onClick,type="button",disabled,secondary,className=""}:Props){const c="group inline-flex items-center justify-center gap-3 rounded-[6px] border px-[18px] py-3 text-sm font-semibold transition duration-150 hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-50 "+(secondary?"border-[#C9C7BF] bg-transparent text-[#171816] hover:bg-[#ECE9E1]":"border-[#315C4A] bg-[#315C4A] text-[#FAF9F6] hover:bg-[#244536]")+" "+className;if(href)return <Link href={href} className={c}>{children}</Link>;return <button type={type} onClick={onClick} disabled={disabled} className={c}>{children}</button>}
