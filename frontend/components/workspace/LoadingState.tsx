@@ -1,3 +1,1 @@
-export default function LoadingState({ label = "Loading" }: { label?: string }) {
-  return <p className="py-10 text-sm text-slate-500">{label}...</p>;
-}
+export default function LoadingState({label}:{label:string}){return <div className="min-h-screen bg-[#F5F3EE] px-5 py-20 text-[#171816]"><div className="mx-auto max-w-5xl"><div className="font-mono-ui text-[10px] tracking-[.14em] text-[#6E7068]">{label}</div><div className="mt-5 h-px max-w-md bg-[#DCDAD2]"><div className="scan-line h-px w-full bg-[#315C4A]"/></div></div></div>}
