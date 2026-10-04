@@ -132,12 +132,11 @@ def add_paper_to_project_service(
             .table("papers")
             .select("*")
             .eq("openalex_id", paper.openalex_id)
-            .maybe_single()
             .execute()
         )
 
         if existing_paper.data:
-            paper_row = existing_paper.data
+            paper_row = existing_paper.data[0]
 
         else:
             # 3. Create paper
@@ -154,12 +153,13 @@ def add_paper_to_project_service(
                     "doi": paper.doi,
                 })
                 .select("*")
-                .single()
                 .execute()
             )
 
-            paper_row = new_paper.data
+            print("new_paper:", new_paper)
+            print("new_paper.data:", new_paper.data)
 
+            paper_row = new_paper.data[0]
         paper_id = paper_row["id"]
 
         supabase.table("project_papers").upsert(
