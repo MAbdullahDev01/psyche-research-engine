@@ -1,7 +1,1 @@
-import { SignUp } from "@clerk/nextjs";
-
-export default function SignUpPage(){
-  return(
-    <SignUp />
-  )
-}
+import { SignUp } from "@clerk/nextjs";export default function SignUpPage(){return <main className="min-h-screen bg-[#F5F3EE] px-5 py-20"><div className="mx-auto max-w-md text-center"><div className="mb-10"><p className="font-mono-ui text-[9px] uppercase tracking-[.14em] text-[#6E7068]">Psychology Research Lab</p><h1 className="font-editorial mt-4 text-5xl">Open the lab.</h1></div><div className="flex justify-center"><SignUp/></div></div></main>}
