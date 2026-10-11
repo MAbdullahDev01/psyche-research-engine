@@ -5,30 +5,22 @@ from app.services.user_services import add_user, delete_user, update_user
 
 router = APIRouter(prefix="/api/webhooks", tags=["webhooks"])
 
-@router.post("/clerk")
-async def clerk_webhook(request: Request, status_code=status.HTTP_200_OK):
 
-    payload = await request.body()
-    headers = request.headers
+@router.post("/clerk", status_code=status.HTTP_200_OK)
+async def clerk_webhook(request: Request) -> dict[str, bool]:
+    event = verify_clerk_webhook(await request.body(), request.headers)
+    event_type = event.get("type")
 
-    # for debugging purposes
-    # print(headers)
-    # print(payload)
+    handlers = {
+        "user.created": add_user,
+        "user.updated": update_user,
+        "user.deleted": delete_user,
+    }
+    handler = handlers.get(event_type)
 
-    # Verify the Clerk webhook
-    event = verify_clerk_webhook(payload, headers) # type: ignore
+    # Valid, signed events that this version does not consume are acknowledged.
+    # Returning 2xx prevents Clerk from retrying events the app intentionally ignores.
+    if handler is not None:
+        handler(event)
 
-    match event.get("type"):
-        # Add the user to the database
-        case "user.created":
-            add_user(event)
-        case "user.updated":
-            update_user(event)
-        case "user.deleted":
-            delete_user(event)
-        case _:
-            status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
-            return {status_code : f"Unhandled webhook event type: {event.get('type')}"}
-    
-
-    return {status_code : "Webhook received successfully."}
+    return {"received": True}
