@@ -3,34 +3,16 @@ import re
 import httpx
 from fastapi import HTTPException, status
 
-from app.schemas.papers_schemas import Paper, Params, SearchPapersResponse
 from app.core.config import settings
+from app.schemas.papers_schemas import Paper, Params, SearchPapersResponse
 
 STOP_WORDS = {
-    "what",
-    "are",
-    "is",
-    "the",
-    "of",
-    "in",
-    "on",
-    "how",
-    "why",
-    "when",
-    "where",
-    "can",
-    "do",
-    "does",
-    "used",
-    "using",
-    "for",
-    "to",
-    "a",
-    "an",
+    "what", "are", "is", "the", "of", "in", "on", "how", "why", "when",
+    "where", "can", "do", "does", "used", "using", "for", "to", "a", "an",
 }
 
-def fetch_papers(params: Params) -> SearchPapersResponse:
 
+def fetch_papers(params: Params) -> SearchPapersResponse:
     query = _clean_query(params.query)
     if not query:
         raise HTTPException(
@@ -44,7 +26,6 @@ def fetch_papers(params: Params) -> SearchPapersResponse:
         for key, value in filter_values.items()
         if isinstance(value, str) and value.strip()
     )
-
     openalex_params = {
         "search": query,
         "page": params.page,
@@ -62,10 +43,9 @@ def fetch_papers(params: Params) -> SearchPapersResponse:
             )
             response.raise_for_status()
     except httpx.HTTPStatusError as exc:
-        upstream_status = exc.response.status_code
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"OpenAlex rejected the paper search request (HTTP {upstream_status}).",
+            detail=f"OpenAlex rejected the paper search request (HTTP {exc.response.status_code}).",
         ) from exc
     except httpx.RequestError as exc:
         raise HTTPException(
@@ -73,12 +53,27 @@ def fetch_papers(params: Params) -> SearchPapersResponse:
             detail="OpenAlex is unavailable. Please try again.",
         ) from exc
 
-    payload = response.json()
+    try:
+        payload = response.json()
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="OpenAlex returned an invalid response.",
+        ) from exc
+
+    if not isinstance(payload, dict) or not isinstance(payload.get("results", []), list):
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="OpenAlex returned an unexpected response format.",
+        )
+
+    meta = payload.get("meta")
+    total = meta.get("count") if isinstance(meta, dict) else None
     return SearchPapersResponse(
-        papers=[map_openalex_work(work) for work in payload.get("results", [])],
+        papers=[map_openalex_work(work) for work in payload.get("results", []) if isinstance(work, dict)],
         page=params.page,
         per_page=params.per_page,
-        total=payload.get("meta", {}).get("count"),
+        total=total,
     )
 
 
@@ -95,6 +90,7 @@ def map_openalex_work(work: dict) -> Paper:
         )
         and author_name
     ]
+
     abstract_inverted_index = work.get("abstract_inverted_index")
     abstract = None
     if isinstance(abstract_inverted_index, dict):
@@ -107,8 +103,7 @@ def map_openalex_work(work: dict) -> Paper:
             if isinstance(position, int)
         ]
         abstract = " ".join(
-            word
-            for _, word in sorted(words_by_position, key=lambda item: item[0])
+            word for _, word in sorted(words_by_position, key=lambda item: item[0])
         ) or None
 
     primary_location = work.get("primary_location")
@@ -127,16 +122,7 @@ def map_openalex_work(work: dict) -> Paper:
         doi=work.get("doi"),
     )
 
+
 def _clean_query(query: str) -> str:
-    query = query.lower()
-    query = re.sub(r"[^\w\s]", "", query)
-
-    words = query.split()
-
-    keywords = [
-        word
-        for word in words
-        if word not in STOP_WORDS
-    ]
-
-    return " ".join(keywords)
+    normalized = re.sub(r"[^\w\s]", "", query.lower())
+    return " ".join(word for word in normalized.split() if word not in STOP_WORDS)

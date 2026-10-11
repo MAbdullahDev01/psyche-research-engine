@@ -1,34 +1,41 @@
 from fastapi import APIRouter, Request, status
 
 from app.core.security import verify_clerk_webhook
-from app.services.user_services import add_user, delete_user, update_user
+from app.services.user_services import (
+    add_user,
+    delete_user,
+    has_processed_clerk_event,
+    mark_clerk_event_processed,
+    update_user,
+)
 
 router = APIRouter(prefix="/api/webhooks", tags=["webhooks"])
 
-@router.post("/clerk")
-async def clerk_webhook(request: Request, status_code=status.HTTP_200_OK):
 
-    payload = await request.body()
-    headers = request.headers
+@router.post("/clerk", status_code=status.HTTP_200_OK)
+async def clerk_webhook(request: Request) -> dict[str, bool]:
+    event = verify_clerk_webhook(await request.body(), request.headers)
+    event_type = event.get("type")
+    header_event_id = request.headers.get("svix-id")
+    payload_event_id = event.get("id")
+    event_id = header_event_id or (payload_event_id if isinstance(payload_event_id, str) else None)
 
-    # for debugging purposes
-    # print(headers)
-    # print(payload)
+    if event_id and has_processed_clerk_event(event_id):
+        return {"received": True, "duplicate": True}
 
-    # Verify the Clerk webhook
-    event = verify_clerk_webhook(payload, headers) # type: ignore
+    handlers = {
+        "user.created": add_user,
+        "user.updated": update_user,
+        "user.deleted": delete_user,
+    }
+    handler = handlers.get(event_type)
 
-    match event.get("type"):
-        # Add the user to the database
-        case "user.created":
-            add_user(event)
-        case "user.updated":
-            update_user(event)
-        case "user.deleted":
-            delete_user(event)
-        case _:
-            status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
-            return {status_code : f"Unhandled webhook event type: {event.get('type')}"}
-    
+    # Valid, signed events this version does not consume are acknowledged and
+    # recorded, preventing pointless retries for unsupported event types.
+    if handler is not None:
+        handler(event)
 
-    return {status_code : "Webhook received successfully."}
+    if event_id:
+        mark_clerk_event_processed(event_id, str(event_type or "unknown"))
+
+    return {"received": True}
