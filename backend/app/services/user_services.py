@@ -69,3 +69,46 @@ def get_current_user(request: Request) -> RequestState:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
 
     return auth_state
+
+
+def has_processed_clerk_event(event_id: str) -> bool:
+    try:
+        response = (
+            supabase.table("clerk_webhook_events")
+            .select("event_id")
+            .eq("event_id", event_id)
+            .maybe_single()
+            .execute()
+        )
+        return bool(response.data)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to check Clerk webhook idempotency.",
+        ) from exc
+
+
+def mark_clerk_event_processed(event_id: str, event_type: str) -> None:
+    try:
+        supabase.table("clerk_webhook_events").insert(
+            {"event_id": event_id, "event_type": event_type}
+        ).execute()
+    except Exception as exc:
+        # Concurrent deliveries can both pass the initial lookup. A duplicate
+        # insert is safe only if the unique event row now exists.
+        try:
+            response = (
+                supabase.table("clerk_webhook_events")
+                .select("event_id")
+                .eq("event_id", event_id)
+                .maybe_single()
+                .execute()
+            )
+            if response.data:
+                return
+        except Exception:
+            pass
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to record Clerk webhook processing.",
+        ) from exc
