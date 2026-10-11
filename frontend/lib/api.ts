@@ -56,7 +56,20 @@ async function request<T>(
 }
 
 export async function listProjects(token: string | null): Promise<Project[]> {
-  return request<Project[]>("/api/projects", token);
+  const result = await request<unknown>("/api/projects/", token);
+
+  if (Array.isArray(result)) return result as Project[];
+
+  if (
+    typeof result === "object" &&
+    result !== null &&
+    "error" in result &&
+    typeof result.error === "string"
+  ) {
+    throw { message: result.error } satisfies ApiError;
+  }
+
+  throw { message: "Could not load projects." } satisfies ApiError;
 }
 
 export async function getProject(
