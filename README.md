@@ -16,7 +16,7 @@ Psyche is a research workspace for discovering psychological literature, organiz
 - `backend/`: FastAPI, Clerk Backend SDK, Supabase Python client, and OpenAlex API integration.
 - `backend/migrations/`: SQL schema migrations. Apply them in numeric order in your Supabase project.
 
-The frontend calls the FastAPI backend. The backend uses the Supabase service-role key; never expose that key to the browser. Clerk webhooks synchronize user records into the `users` table.
+The frontend calls the FastAPI backend. The backend uses the Supabase service-role key; never expose that key to the browser. Clerk webhooks synchronize user records into the `users` table. Delivery IDs are persisted in `clerk_webhook_events` to make webhook retries idempotent.
 
 ## Local development
 
@@ -26,7 +26,7 @@ Copy `backend/.env.example` to `backend/.env` and `frontend/.env.example` to `fr
 
 ### 2. Apply database migrations
 
-Apply the SQL files in `backend/migrations/` in order. The RLS hardening migration enables row-level security and revokes direct table privileges from Supabase `anon` and `authenticated` roles because access is routed through FastAPI using the service role. Verify the service-role key is configured only on the backend.
+Apply the SQL files in `backend/migrations/` in order, including migration 008 for Clerk webhook deduplication. The RLS hardening migration enables row-level security and revokes direct table privileges from Supabase `anon` and `authenticated` roles because access is routed through FastAPI using the service role. Verify the service-role key is configured only on the backend.
 
 ### 3. Start the backend
 
