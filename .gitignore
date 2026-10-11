@@ -41,3 +41,10 @@ backend/venv/
 .env
 __pycache__/
 *.pyc
+# Backend environment and test artifacts
+backend/.env
+backend/.venv/
+backend/venv/
+.pytest_cache/
+.coverage
+htmlcov/
