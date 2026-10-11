@@ -1,78 +1,71 @@
-from fastapi import Request, Header, HTTPException
+from fastapi import HTTPException, Request, status
 from clerk_backend_api.security import AuthenticateRequestOptions, RequestState
 
 from app.core.clerk import clerk_client
+from app.core.config import settings
 from app.db.supabase import supabase
 
-def add_user(event):
-    try:
-        response = (
-            supabase.table("users")
-            .upsert(
-                {
-                    "clerk_id": event.get("data", {}).get("id"),
-                    "first_name": event.get("data", {}).get("first_name"),
-                    "last_name": event.get("data", {}).get("last_name"),
-                    "image_url" : event.get("data", {}).get("image_url"),
-                },
-                on_conflict="clerk_id",
-            )
-            .execute()
-        )
-    except Exception as e:
-        print(f"Error adding user: {e}")
 
+def _user_data(event: dict) -> dict:
+    data = event.get("data")
+    clerk_id = data.get("id") if isinstance(data, dict) else None
+    if not isinstance(clerk_id, str) or not clerk_id.strip():
         raise HTTPException(
-            status_code=500,
-            detail="Failed to add user"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Clerk webhook event is missing data.id.",
         )
+    return {
+        "clerk_id": clerk_id,
+        "first_name": data.get("first_name"),
+        "last_name": data.get("last_name"),
+        "image_url": data.get("image_url"),
+    }
 
-def delete_user(event):
+
+def add_user(event: dict) -> None:
     try:
-        response = (
-            supabase.table("users")
-            .delete()
-            .eq("clerk_id", event.get("data", {}).get("id"))
-            .execute()
-        )
-    except Exception as e:
-        print(f"Error deleting user: {e}")
-        # Error logging for debugging purposes
+        supabase.table("users").upsert(_user_data(event), on_conflict="clerk_id").execute()
+    except HTTPException:
+        raise
+    except Exception as exc:
         raise HTTPException(
-            status_code=500,
-            detail="Failed to delete user"
-        )
-        
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to add user.",
+        ) from exc
 
-def update_user(event):
+
+def delete_user(event: dict) -> None:
+    user = _user_data(event)
     try:
-        response = (
-            supabase.table("users")
-            .update(
-                {
-                    "first_name": event.get("data", {}).get("first_name"),
-                    "last_name": event.get("data", {}).get("last_name"),
-                    "image_url" : event.get("data", {}).get("image_url"),
-                }
-            )
-            .eq("clerk_id", event.get("data", {}).get("id"))
-            .execute()
-        )
-    except Exception as e:
-        # Error logging for debugging purposes
-        print(f"Error updating user: {e}")
-
+        supabase.table("users").delete().eq("clerk_id", user["clerk_id"]).execute()
+    except Exception as exc:
         raise HTTPException(
-            status_code=500,
-            detail="Failed to update user"
-        )
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete user.",
+        ) from exc
+
+
+def update_user(event: dict) -> None:
+    # Upsert makes webhook retries and out-of-order user.updated events safe when
+    # the initial user.created delivery was missed.
+    try:
+        supabase.table("users").upsert(_user_data(event), on_conflict="clerk_id").execute()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user.",
+        ) from exc
+
 
 def get_current_user(request: Request) -> RequestState:
-    auth_state = clerk_client.authenticate_request(request, AuthenticateRequestOptions(
-            authorized_parties=["http://localhost:3000"]
-        ))
+    auth_state = clerk_client.authenticate_request(
+        request,
+        AuthenticateRequestOptions(authorized_parties=settings.clerk_authorized_parties),
+    )
 
     if not auth_state.is_authenticated:
-        raise HTTPException(status_code=401, detail="Unauthorized")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
 
     return auth_state
