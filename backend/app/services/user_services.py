@@ -77,7 +77,7 @@ def has_processed_clerk_event(event_id: str) -> bool:
             supabase.table("clerk_webhook_events")
             .select("event_id")
             .eq("event_id", event_id)
-            .maybe_single()
+            .limit(1)
             .execute()
         )
         return bool(response.data)
@@ -101,7 +101,7 @@ def mark_clerk_event_processed(event_id: str, event_type: str) -> None:
                 supabase.table("clerk_webhook_events")
                 .select("event_id")
                 .eq("event_id", event_id)
-                .maybe_single()
+                .limit(1)
                 .execute()
             )
             if response.data:
